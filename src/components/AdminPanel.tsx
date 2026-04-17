@@ -4,7 +4,7 @@ import {
   LogOut, Plus, Edit, Trash2, Upload, Eye, EyeOff, X, CheckCircle,
   AlertCircle, Menu, Youtube, Instagram, Facebook, Music,
   Lock, Mail, User, Key, Search,
-  Heart, MessageCircle, Headphones, Play
+  Heart, MessageCircle, Headphones, Play, Reply, Send
 } from 'lucide-react';
 import { supabase, SocialMediaPost, UpcomingEvent, BlogPost, NewMember } from '../lib/supabase';
 
@@ -19,6 +19,7 @@ interface BlogFormState {
 interface BlogCommentRow {
   id: string; post_id: string; author_name: string;
   author_email?: string; content: string; created_at?: string;
+  admin_reply?: string; replied_at?: string;
 }
 interface AuthUser {
   id: string; email?: string; user_metadata?: { full_name?: string };
@@ -494,26 +495,113 @@ const BlogFormModal = ({ form, setForm, isEditing, uploading, uploadProgress, ta
 );
 
 /* ── Comments Modal ── */
-interface CommentsModalProps { postTitle: string; comments: BlogCommentRow[]; onDelete: (id: string) => void; onClose: () => void; }
-const CommentsModal = ({ postTitle, comments, onDelete, onClose }: CommentsModalProps) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-    <div className="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col shadow-2xl">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[#EEEAE4]"><div><h3 className="font-display text-base font-bold text-[#1A1A2E]">Comments</h3><p className="text-xs text-[#A8A6A0] mt-0.5 line-clamp-1">{postTitle}</p></div><button onClick={onClose} className="text-[#A8A6A0] hover:text-[#1A1A2E]"><X className="w-5 h-5" /></button></div>
-      <div className="flex-1 overflow-y-auto p-5 space-y-4">
-        {comments.length === 0 ? <p className="text-center text-sm text-[#A8A6A0] py-8">No comments on this post</p> : comments.map(c => (
-          <div key={c.id} className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#C9A84C]/15 flex items-center justify-center text-[#C9A84C] font-bold text-sm flex-shrink-0">{c.author_name?.[0]?.toUpperCase()}</div>
-            <div className="flex-1 bg-[#F8F7F4] rounded-xl px-4 py-3">
-              <div className="flex items-center justify-between mb-1"><span className="text-sm font-semibold text-[#1A1A2E]">{c.author_name}</span><div className="flex items-center gap-2"><span className="text-xs text-[#A8A6A0]">{new Date(c.created_at || '').toLocaleDateString()}</span><button onClick={() => onDelete(c.id)} className="text-red-400 hover:text-red-600 p-0.5"><Trash2 className="w-3.5 h-3.5" /></button></div></div>
-              <p className="text-sm text-[#4A4A6A]">{c.content}</p>
-              {c.author_email && <p className="text-xs text-[#A8A6A0] mt-1">{c.author_email}</p>}
-            </div>
-          </div>
-        ))}
+interface CommentsModalProps { postTitle: string; comments: BlogCommentRow[]; onDelete: (id: string) => void; onReply: (id: string, reply: string) => Promise<void>; onClose: () => void; }
+const CommentsModal = ({ postTitle, comments, onDelete, onReply, onClose }: CommentsModalProps) => {
+  const [replyingTo, setReplyingTo] = React.useState<string | null>(null);
+  const [replyText, setReplyText] = React.useState('');
+  const [saving, setSaving] = React.useState(false);
+
+  const submitReply = async (commentId: string) => {
+    if (!replyText.trim()) return;
+    setSaving(true);
+    await onReply(commentId, replyText.trim());
+    setSaving(false);
+    setReplyingTo(null);
+    setReplyText('');
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+      <div className="bg-white rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#EEEAE4]">
+          <div><h3 className="font-display text-base font-bold text-[#1A1A2E]">Comments</h3><p className="text-xs text-[#A8A6A0] mt-0.5 line-clamp-1">{postTitle}</p></div>
+          <button onClick={onClose} className="text-[#A8A6A0] hover:text-[#1A1A2E]"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          {comments.length === 0
+            ? <p className="text-center text-sm text-[#A8A6A0] py-8">No comments on this post</p>
+            : comments.map(c => (
+              <div key={c.id} className="flex gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#C9A84C]/15 flex items-center justify-center text-[#C9A84C] font-bold text-sm flex-shrink-0">{c.author_name?.[0]?.toUpperCase()}</div>
+                <div className="flex-1">
+                  {/* Comment bubble */}
+                  <div className="bg-[#F8F7F4] rounded-xl px-4 py-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-semibold text-[#1A1A2E]">{c.author_name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-[#A8A6A0]">{new Date(c.created_at || '').toLocaleDateString()}</span>
+                        <button
+                          onClick={() => { setReplyingTo(replyingTo === c.id ? null : c.id); setReplyText(c.admin_reply || ''); }}
+                          className="text-[#3D1F6E] hover:text-[#C9A84C] p-0.5 transition-colors"
+                          title="Reply"
+                        >
+                          <Reply className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => onDelete(c.id)} className="text-red-400 hover:text-red-600 p-0.5"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-[#4A4A6A]">{c.content}</p>
+                    {c.author_email && <p className="text-xs text-[#A8A6A0] mt-1">{c.author_email}</p>}
+                  </div>
+
+                  {/* Existing admin reply (read view) */}
+                  {c.admin_reply && replyingTo !== c.id && (
+                    <div className="ml-4 mt-2 flex gap-2">
+                      <div className="w-6 h-6 rounded-full bg-[#3D1F6E] flex items-center justify-center flex-shrink-0">
+                        <Reply className="w-3 h-3 text-[#C9A84C]" />
+                      </div>
+                      <div className="flex-1 bg-[#1A1A2E]/5 border border-[#3D1F6E]/15 rounded-xl px-3 py-2">
+                        <p className="text-xs font-bold text-[#3D1F6E] mb-0.5">RuggedYouth Admin</p>
+                        <p className="text-sm text-[#4A4A6A]">{c.admin_reply}</p>
+                        {c.replied_at && <p className="text-xs text-[#A8A6A0] mt-1">{new Date(c.replied_at).toLocaleDateString()}</p>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reply input (inline) */}
+                  {replyingTo === c.id && (
+                    <div className="ml-4 mt-2 flex gap-2">
+                      <div className="w-6 h-6 rounded-full bg-[#3D1F6E] flex items-center justify-center flex-shrink-0 mt-2">
+                        <Reply className="w-3 h-3 text-[#C9A84C]" />
+                      </div>
+                      <div className="flex-1">
+                        <textarea
+                          value={replyText}
+                          onChange={e => setReplyText(e.target.value)}
+                          placeholder="Write your reply as admin…"
+                          rows={3}
+                          className="w-full text-sm border border-[#3D1F6E]/30 rounded-xl px-3 py-2 focus:outline-none focus:border-[#C9A84C] resize-none bg-white"
+                        />
+                        <div className="flex gap-2 mt-1.5">
+                          <button
+                            onClick={() => submitReply(c.id)}
+                            disabled={saving || !replyText.trim()}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#3D1F6E] text-white text-xs font-bold rounded-lg hover:bg-[#4e2b8a] disabled:opacity-50 transition-all"
+                          >
+                            {saving ? 'Saving…' : <><Send className="w-3 h-3" /> Post Reply</>}
+                          </button>
+                          {c.admin_reply && (
+                            <button
+                              onClick={async () => { setSaving(true); await onReply(c.id, ''); setSaving(false); setReplyingTo(null); setReplyText(''); }}
+                              className="px-3 py-1.5 text-red-500 text-xs font-bold rounded-lg border border-red-200 hover:bg-red-50 transition-all"
+                            >
+                              Remove Reply
+                            </button>
+                          )}
+                          <button onClick={() => { setReplyingTo(null); setReplyText(''); }} className="px-3 py-1.5 text-[#A8A6A0] text-xs font-bold rounded-lg hover:bg-[#F8F7F4] transition-all">Cancel</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          }
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 /* ── Blog Tab ── */
 interface BlogTabProps { blogPosts: BlogPost[]; editBlog: BlogPost | null; showBlogForm: boolean; setEditBlog: (p: BlogPost | null) => void; setShowBlogForm: (v: boolean) => void; notify: (t: 'success' | 'error', msg: string) => void; refresh: () => void; }
@@ -556,6 +644,12 @@ const BlogTab = ({ blogPosts, editBlog, showBlogForm, setEditBlog, setShowBlogFo
     await supabase.from('blog_comments').delete().eq('post_id', id); await supabase.from('blog_posts').delete().eq('id', id); notify('success', 'Post deleted'); refresh();
   };
   const delComment = async (commentId: string) => { await supabase.from('blog_comments').delete().eq('id', commentId); setPostComments(prev => prev.filter(c => c.id !== commentId)); notify('success', 'Comment removed'); };
+  const replyToComment = async (commentId: string, reply: string) => {
+    const { error } = await supabase.from('blog_comments').update({ admin_reply: reply || null, replied_at: reply ? new Date().toISOString() : null }).eq('id', commentId);
+    if (error) { notify('error', 'Failed to save reply'); return; }
+    setPostComments(prev => prev.map(c => c.id === commentId ? { ...c, admin_reply: reply || undefined, replied_at: reply ? new Date().toISOString() : undefined } : c));
+    notify('success', reply ? 'Reply posted!' : 'Reply removed');
+  };
   const togglePublish = async (id: string, current: boolean) => { await supabase.from('blog_posts').update({ is_published: !current }).eq('id', id); notify('success', current ? 'Post unpublished' : 'Post published! 🎉'); refresh(); };
   const loadComments = async (postId: string) => { const { data } = await supabase.from('blog_comments').select('*').eq('post_id', postId).order('created_at', { ascending: false }); setPostComments((data as BlogCommentRow[]) || []); setViewComments(postId); };
   const filteredBlog = blogPosts.filter(p => p.title.toLowerCase().includes(blogSearch.toLowerCase()) || (p.author_name || '').toLowerCase().includes(blogSearch.toLowerCase()));
@@ -570,7 +664,7 @@ const BlogTab = ({ blogPosts, editBlog, showBlogForm, setEditBlog, setShowBlogFo
         </div>
       </div>
       {(showBlogForm || editBlog) && <BlogFormModal form={form} setForm={setForm} isEditing={!!editBlog} uploading={uploading} uploadProgress={uploadProgress} tagInput={tagInput} setTagInput={setTagInput} onAddTag={addTag} onUploadFile={uploadFile} onSave={save} onClose={closeForm} />}
-      {viewComments && <CommentsModal postTitle={blogPosts.find(p => p.id === viewComments)?.title || ''} comments={postComments} onDelete={delComment} onClose={() => setViewComments(null)} />}
+      {viewComments && <CommentsModal postTitle={blogPosts.find(p => p.id === viewComments)?.title || ''} comments={postComments} onDelete={delComment} onReply={replyToComment} onClose={() => setViewComments(null)} />}
       <div className="space-y-3">
         {filteredBlog.map(post => (
           <div key={post.id} className="bg-white rounded-xl border border-[#EEEAE4] p-4 sm:p-5">

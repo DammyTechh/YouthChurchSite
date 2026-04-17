@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import {
   Heart, MessageCircle, Share2, ArrowLeft, Send, Play, Headphones,
   Copy, Check, ExternalLink, Link as LinkIcon, BookOpen,
-  Clock, User, ChevronDown, ChevronUp, X
+  Clock, User, ChevronDown, ChevronUp, X, Reply
 } from 'lucide-react';
 import { supabase, BlogPost as BlogPostType, BlogComment } from '../lib/supabase';
 
@@ -102,12 +102,33 @@ const CommentCard = ({ comment }: { comment: BlogComment }) => (
     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#C9A84C]/20 to-[#3D1F6E]/20 border border-[#C9A84C]/25 flex items-center justify-center text-[#C9A84C] font-bold text-sm flex-shrink-0">
       {(comment.author_name[0] || 'A').toUpperCase()}
     </div>
-    <div className="flex-1 bg-white rounded-2xl rounded-tl-sm border border-[#EEEAE4] px-5 py-4 group-hover:border-[#C9A84C]/20 transition-colors">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-semibold text-[#1A1A2E]">{comment.author_name}</span>
-        <span className="text-xs text-[#A8A6A0]">{timeAgo(comment.created_at || '')}</span>
+    <div className="flex-1">
+      {/* User comment bubble */}
+      <div className="bg-white rounded-2xl rounded-tl-sm border border-[#EEEAE4] px-5 py-4 group-hover:border-[#C9A84C]/20 transition-colors">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-semibold text-[#1A1A2E]">{comment.author_name}</span>
+          <span className="text-xs text-[#A8A6A0]">{timeAgo(comment.created_at || '')}</span>
+        </div>
+        <p className="text-sm text-[#4A4A6A] leading-relaxed">{comment.content}</p>
       </div>
-      <p className="text-sm text-[#4A4A6A] leading-relaxed">{comment.content}</p>
+
+      {/* Admin reply bubble */}
+      {comment.admin_reply && (
+        <div className="ml-4 mt-2 flex gap-2">
+          <div className="w-7 h-7 rounded-full bg-[#3D1F6E] flex items-center justify-center flex-shrink-0">
+            <Reply className="w-3.5 h-3.5 text-[#C9A84C]" />
+          </div>
+          <div className="flex-1 bg-[#1A1A2E]/5 border border-[#3D1F6E]/20 rounded-2xl rounded-tl-sm px-5 py-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-bold text-[#3D1F6E]">RuggedYouth Team</span>
+              {comment.replied_at && (
+                <span className="text-xs text-[#A8A6A0]">{timeAgo(comment.replied_at)}</span>
+              )}
+            </div>
+            <p className="text-sm text-[#4A4A6A] leading-relaxed">{comment.admin_reply}</p>
+          </div>
+        </div>
+      )}
     </div>
   </div>
 );

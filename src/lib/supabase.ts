@@ -75,6 +75,8 @@ export interface BlogComment {
   author_name: string
   author_email: string
   content: string
+  admin_reply?: string
+  replied_at?: string
   created_at?: string
 }
 
