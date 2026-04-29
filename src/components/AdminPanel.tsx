@@ -4,9 +4,11 @@ import {
   LogOut, Plus, Edit, Trash2, Upload, Eye, EyeOff, X, CheckCircle,
   AlertCircle, Menu, Youtube, Instagram, Facebook, Music,
   Lock, Mail, User, Key, Search,
-  Heart, MessageCircle, Headphones, Play, Reply, Send
+  Heart, MessageCircle, Headphones, Play, Reply, Send,
+  Radio as RadioIcon
 } from 'lucide-react';
 import { supabase, SocialMediaPost, UpcomingEvent, BlogPost, NewMember } from '../lib/supabase';
+import AdminLiveStudio from './AdminLiveStudio';
 
 type DbMediaType = 'text' | 'image' | 'video' | 'audio';
 type UiMediaType = DbMediaType | 'flyer' | 'link';
@@ -133,10 +135,10 @@ const AuthScreen = ({ onAuth }: { onAuth: (user: AuthUser) => void }) => {
             <form onSubmit={handleLogin} className="space-y-4">
               <div><label className="block text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">Email</label>
                 <div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                  <input value={form.email} onChange={e => set('email', e.target.value)} type="email" placeholder="admin@email.com" required className="w-full pl-10 pr-4 py-3 bg-white/8 border border-white/15 rounded-lg text-white placeholder-white/25 text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-all" /></div></div>
+                  <input value={form.email} onChange={e => set('email', e.target.value)} type="email" placeholder="admin@email.com" required className="auth-input w-full pl-10 pr-4 py-3 bg-white/10 border border-white/15 rounded-lg text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-all" /></div></div>
               <div><label className="block text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">Password</label>
                 <div className="relative"><Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                  <input value={form.password} onChange={e => set('password', e.target.value)} type="password" placeholder="••••••••" required className="w-full pl-10 pr-4 py-3 bg-white/8 border border-white/15 rounded-lg text-white placeholder-white/25 text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-all" /></div></div>
+                  <input value={form.password} onChange={e => set('password', e.target.value)} type="password" placeholder="••••••••" required className="auth-input w-full pl-10 pr-4 py-3 bg-white/10 border border-white/15 rounded-lg text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-all" /></div></div>
               <div className="flex justify-end"><button type="button" onClick={() => { setMode('forgot'); setMsg(null); }} className="text-xs text-[#C9A84C] hover:text-[#E8C97A]">Forgot password?</button></div>
               <button type="submit" disabled={loading} className="w-full py-3 bg-gradient-to-r from-[#C9A84C] to-[#E8C97A] text-[#1A1A2E] font-semibold rounded-lg text-sm hover:opacity-90 transition-all disabled:opacity-50">{loading ? 'Signing in...' : 'Sign In'}</button>
               <p className="text-center text-xs text-white/35">Need an account?{' '}<button type="button" onClick={() => { setMode('register'); setMsg(null); }} className="text-[#C9A84C] hover:text-[#E8C97A]">Register</button></p>
@@ -146,16 +148,16 @@ const AuthScreen = ({ onAuth }: { onAuth: (user: AuthUser) => void }) => {
             <form onSubmit={handleRegister} className="space-y-4">
               <div><label className="block text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">Full Name</label>
                 <div className="relative"><User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                  <input value={form.fullName} onChange={e => set('fullName', e.target.value)} placeholder="Your full name" required className="w-full pl-10 pr-4 py-3 bg-white/8 border border-white/15 rounded-lg text-white placeholder-white/25 text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-all" /></div></div>
+                  <input value={form.fullName} onChange={e => set('fullName', e.target.value)} placeholder="Your full name" required className="auth-input w-full pl-10 pr-4 py-3 bg-white/10 border border-white/15 rounded-lg text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-all" /></div></div>
               <div><label className="block text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">Email</label>
                 <div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                  <input value={form.email} onChange={e => set('email', e.target.value)} type="email" placeholder="admin@email.com" required className="w-full pl-10 pr-4 py-3 bg-white/8 border border-white/15 rounded-lg text-white placeholder-white/25 text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-all" /></div></div>
+                  <input value={form.email} onChange={e => set('email', e.target.value)} type="email" placeholder="admin@email.com" required className="auth-input w-full pl-10 pr-4 py-3 bg-white/10 border border-white/15 rounded-lg text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-all" /></div></div>
               <div><label className="block text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">Password</label>
                 <div className="relative"><Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                  <input value={form.password} onChange={e => set('password', e.target.value)} type="password" placeholder="Min. 8 characters" required className="w-full pl-10 pr-4 py-3 bg-white/8 border border-white/15 rounded-lg text-white placeholder-white/25 text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-all" /></div></div>
+                  <input value={form.password} onChange={e => set('password', e.target.value)} type="password" placeholder="Min. 8 characters" required className="auth-input w-full pl-10 pr-4 py-3 bg-white/10 border border-white/15 rounded-lg text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-all" /></div></div>
               <div><label className="block text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">Confirm Password</label>
                 <div className="relative"><Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                  <input value={form.confirmPassword} onChange={e => set('confirmPassword', e.target.value)} type="password" placeholder="Repeat password" required className="w-full pl-10 pr-4 py-3 bg-white/8 border border-white/15 rounded-lg text-white placeholder-white/25 text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-all" /></div></div>
+                  <input value={form.confirmPassword} onChange={e => set('confirmPassword', e.target.value)} type="password" placeholder="Repeat password" required className="auth-input w-full pl-10 pr-4 py-3 bg-white/10 border border-white/15 rounded-lg text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-all" /></div></div>
               <button type="submit" disabled={loading} className="w-full py-3 bg-gradient-to-r from-[#C9A84C] to-[#E8C97A] text-[#1A1A2E] font-semibold rounded-lg text-sm hover:opacity-90 transition-all disabled:opacity-50">{loading ? 'Creating Account...' : 'Create Account'}</button>
               <p className="text-center text-xs text-white/35">Already have an account?{' '}<button type="button" onClick={() => { setMode('login'); setMsg(null); }} className="text-[#C9A84C] hover:text-[#E8C97A]">Sign In</button></p>
             </form>
@@ -165,7 +167,7 @@ const AuthScreen = ({ onAuth }: { onAuth: (user: AuthUser) => void }) => {
               <p className="text-white/55 text-sm">Enter your email and we'll send a reset link.</p>
               <div><label className="block text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">Email</label>
                 <div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                  <input value={form.email} onChange={e => set('email', e.target.value)} type="email" placeholder="admin@email.com" required className="w-full pl-10 pr-4 py-3 bg-white/8 border border-white/15 rounded-lg text-white placeholder-white/25 text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-all" /></div></div>
+                  <input value={form.email} onChange={e => set('email', e.target.value)} type="email" placeholder="admin@email.com" required className="auth-input w-full pl-10 pr-4 py-3 bg-white/10 border border-white/15 rounded-lg text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-all" /></div></div>
               <button type="submit" disabled={loading} className="w-full py-3 bg-gradient-to-r from-[#C9A84C] to-[#E8C97A] text-[#1A1A2E] font-semibold rounded-lg text-sm hover:opacity-90 transition-all disabled:opacity-50">{loading ? 'Sending...' : 'Send Reset Link'}</button>
               <button type="button" onClick={() => { setMode('login'); setMsg(null); }} className="w-full text-xs text-white/40 hover:text-white transition-colors py-2">← Back to Login</button>
             </form>
@@ -181,6 +183,7 @@ interface SidebarProps { user: AuthUser; tab: string; setTab: (t: string) => voi
 const Sidebar = ({ user, tab, setTab, setSidebarOpen, onLogout }: SidebarProps) => {
   const navItems = [
     { id: 'dashboard', icon: <LayoutDashboard className="w-4 h-4" />, label: 'Dashboard' },
+    { id: 'live',     icon: <RadioIcon className="w-4 h-4" />,        label: 'Live Studio' },
     { id: 'posts',     icon: <ImageIcon className="w-4 h-4" />,        label: 'Media Posts' },
     { id: 'events',   icon: <Calendar className="w-4 h-4" />,          label: 'Events' },
     { id: 'blog',     icon: <BookOpen className="w-4 h-4" />,          label: 'Blog' },
@@ -809,7 +812,8 @@ const AdminPanel = () => {
   const handleLogout = async () => { await supabase.auth.signOut(); setUser(null); };
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard' }, { id: 'posts', label: 'Media Posts' },
+    { id: 'dashboard', label: 'Dashboard' }, { id: 'live', label: 'Live Studio' },
+    { id: 'posts', label: 'Media Posts' },
     { id: 'events', label: 'Events' }, { id: 'blog', label: 'Blog' },
     { id: 'members', label: 'Members' }, { id: 'settings', label: 'Settings' },
   ];
@@ -842,6 +846,7 @@ const AdminPanel = () => {
         </header>
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
           {tab === 'dashboard' && <DashboardTab user={user} socialPosts={socialPosts} events={events} blogPosts={blogPosts} members={members} setTab={setTab} />}
+          {tab === 'live'      && <AdminLiveStudio notify={notify} />}
           {tab === 'posts'     && <PostsTab socialPosts={socialPosts} editPost={editPost} showPostForm={showPostForm} setEditPost={setEditPost} setShowPostForm={setShowPostForm} notify={notify} refresh={fetchSocialPosts} />}
           {tab === 'events'   && <EventsTab events={events} editEvent={editEvent} showEventForm={showEventForm} setEditEvent={setEditEvent} setShowEventForm={setShowEventForm} notify={notify} refresh={fetchEvents} />}
           {tab === 'blog'     && <BlogTab blogPosts={blogPosts} editBlog={editBlog} showBlogForm={showBlogForm} setEditBlog={setEditBlog} setShowBlogForm={setShowBlogForm} notify={notify} refresh={fetchBlogPosts} />}

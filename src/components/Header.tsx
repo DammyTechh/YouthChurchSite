@@ -24,6 +24,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   const navItems = [
     { path: '/',         label: 'Home'      },
     { path: '/programs', label: 'Programs'  },
+    { path: '/live',     label: 'Live'      },
     { path: '/radio',    label: 'Radio Live'},
     { path: '/media',    label: 'Media'     },
     { path: '/blog',     label: 'Blog'      },

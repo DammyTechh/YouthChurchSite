@@ -137,3 +137,16 @@ h1, h2, h3 { font-family: 'Playfair Display', serif; }
   h1 { font-size: clamp(2rem, 6vw, 3rem); }
   h2 { font-size: clamp(1.5rem, 5vw, 2.25rem); }
 }
+
+/* Auth form: keep typed text visible on dark glass inputs (defeats Chrome autofill recolor) */
+input.auth-input:-webkit-autofill,
+input.auth-input:-webkit-autofill:hover,
+input.auth-input:-webkit-autofill:focus,
+input.auth-input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 1000px rgba(255,255,255,0.10) inset !important;
+  caret-color: #ffffff !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
+.auth-input { color: #ffffff !important; caret-color: #ffffff !important; }
+.auth-input::placeholder { color: rgba(255,255,255,0.35) !important; }

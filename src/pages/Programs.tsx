@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Users, Music, Heart, Calendar, MapPin, Clock, Image as ImageIcon } from 'lucide-react';
 import { supabase, UpcomingEvent, Program } from '../lib/supabase';
+import UpcomingLiveStreams from '../components/UpcomingLiveStreams';
 
 const Programs = () => {
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -69,6 +70,11 @@ const Programs = () => {
               </button>
             </div>
           ))}
+        </div>
+
+        {/* Upcoming Live Broadcasts (from admin scheduling) */}
+        <div className="mb-8">
+          <UpcomingLiveStreams limit={3} variant="card" title="Upcoming Live Broadcasts" />
         </div>
 
         {/* Events */}

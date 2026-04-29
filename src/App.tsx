@@ -12,6 +12,8 @@ import AdminPanel from './components/AdminPanel';
 import ConfirmEmail from './pages/ConfirmEmail';
 import Footer from './components/Footer';
 import Preloader from './components/Preloader';
+import LiveViewer from './pages/LiveViewer';
+import LiveAdPopup from './components/LiveAdPopup';
 
 const AppContent = () => {
   const [pageLoading, setPageLoading] = useState(false);
@@ -28,11 +30,13 @@ const AppContent = () => {
     <div className="min-h-screen bg-white">
       {pageLoading && <Preloader />}
       {!isAdmin && <Header onNavigate={handlePageTransition} />}
+      {!isAdmin && <LiveAdPopup />}
       <main className={!isAdmin ? 'pt-16 lg:pt-20' : ''}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/programs" element={<Programs />} />
           <Route path="/radio" element={<RadioLive />} />
+          <Route path="/live" element={<LiveViewer />} />
           <Route path="/media" element={<Media />} />
           <Route path="/about" element={<About />} />
           <Route path="/blog" element={<Blog />} />

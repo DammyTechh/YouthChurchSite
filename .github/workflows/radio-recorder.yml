@@ -1,0 +1,155 @@
+# Records the Morning Devotion broadcast every day from 05:14 to 05:30
+# Africa/Lagos, encodes a clean MP3, uploads to Supabase Storage, and
+# registers the recording row via the radio-recorder edge function.
+#
+# Required GitHub repo secrets:
+#   SUPABASE_URL                  e.g. https://abcd.supabase.co
+#   SUPABASE_SERVICE_ROLE_KEY     service role key (Storage upload)
+#   RADIO_RECORDER_WEBHOOK_SECRET same value as the Edge Function secret
+#   RADIO_STREAM_URL              https://cast5.my-control-panel.com/proxy/princefm/stream
+
+name: Radio Recorder (Morning Devotion)
+
+on:
+  schedule:
+    # 04:13 UTC = 05:13 Africa/Lagos (UTC+1, no DST)
+    - cron: "13 4 * * *"
+  workflow_dispatch:
+    inputs:
+      duration_seconds:
+        description: "Recording length in seconds (default 1020 = 17 min)"
+        required: false
+        default: "1020"
+
+jobs:
+  record:
+    name: Capture & upload morning broadcast
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ffmpeg curl jq
+
+      - name: Compute broadcast date (Africa/Lagos)
+        id: dates
+        run: |
+          export TZ="Africa/Lagos"
+          BCAST_DATE="$(date +%F)"
+          STARTED_AT="$(date -u +%FT%TZ)"
+          echo "broadcast_date=$BCAST_DATE" >> "$GITHUB_OUTPUT"
+          echo "started_at=$STARTED_AT" >> "$GITHUB_OUTPUT"
+
+      - name: Wait until 05:14 Africa/Lagos
+        run: |
+          export TZ="Africa/Lagos"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual trigger — starting immediately"
+            exit 0
+          fi
+          TARGET="$(date -d 'today 05:14:00' +%s)"
+          NOW="$(date +%s)"
+          DIFF=$(( TARGET - NOW ))
+          if [ "$DIFF" -gt 0 ]; then
+            echo "Sleeping ${DIFF}s until 05:14 Africa/Lagos..."
+            sleep "$DIFF"
+          fi
+
+      - name: Record stream with ffmpeg
+        id: record
+        env:
+          STREAM_URL: ${{ secrets.RADIO_STREAM_URL }}
+          DURATION: ${{ github.event.inputs.duration_seconds || '1020' }}
+        run: |
+          set -euo pipefail
+          OUT="recording.mp3"
+          # Clean-audio settings:
+          #   loudnorm  → EBU R128 normalization for consistent volume
+          #   highpass  → cut sub-80 Hz rumble
+          #   lowpass   → soften any source hiss above 15 kHz
+          #   128 kbps stereo MP3 at 44.1 kHz — small, clean, universal
+          ffmpeg -hide_banner -loglevel warning \
+            -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
+            -i "$STREAM_URL" \
+            -t "$DURATION" \
+            -vn \
+            -ac 2 -ar 44100 \
+            -af "loudnorm=I=-16:TP=-1.5:LRA=11,highpass=f=80,lowpass=f=15000" \
+            -codec:a libmp3lame -b:a 128k \
+            "$OUT"
+
+          ls -lh "$OUT"
+          SIZE="$(stat -c%s "$OUT")"
+          DUR="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "$OUT" | cut -d. -f1)"
+          echo "size=$SIZE" >> "$GITHUB_OUTPUT"
+          echo "duration=$DUR" >> "$GITHUB_OUTPUT"
+
+      - name: Upload to Supabase Storage
+        id: upload
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BCAST_DATE: ${{ steps.dates.outputs.broadcast_date }}
+        run: |
+          set -euo pipefail
+          STORAGE_PATH="radio/${BCAST_DATE}.mp3"
+          UPLOAD_URL="${SUPABASE_URL}/storage/v1/object/radio-recordings/${STORAGE_PATH}"
+
+          HTTP=$(curl -sS -o upload.json -w "%{http_code}" -X POST "$UPLOAD_URL" \
+            -H "Authorization: Bearer ${SERVICE_ROLE}" \
+            -H "apikey: ${SERVICE_ROLE}" \
+            -H "Content-Type: audio/mpeg" \
+            -H "x-upsert: true" \
+            --data-binary @recording.mp3)
+
+          echo "HTTP $HTTP"
+          cat upload.json || true
+          [ "$HTTP" -ge 300 ] && exit 1
+          echo "storage_path=$STORAGE_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Register recording row
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          WEBHOOK_SECRET: ${{ secrets.RADIO_RECORDER_WEBHOOK_SECRET }}
+          BCAST_DATE: ${{ steps.dates.outputs.broadcast_date }}
+          STARTED_AT: ${{ steps.dates.outputs.started_at }}
+          STORAGE_PATH: ${{ steps.upload.outputs.storage_path }}
+          DURATION: ${{ steps.record.outputs.duration }}
+          SIZE: ${{ steps.record.outputs.size }}
+        run: |
+          set -euo pipefail
+          ENDED_AT="$(date -u +%FT%TZ)"
+          PAYLOAD=$(jq -n \
+            --arg date "$BCAST_DATE" \
+            --arg started "$STARTED_AT" \
+            --arg ended "$ENDED_AT" \
+            --arg path "$STORAGE_PATH" \
+            --argjson dur "${DURATION:-0}" \
+            --argjson size "${SIZE:-0}" \
+            '{
+              broadcast_date: $date,
+              broadcast_started_at: $started,
+              broadcast_ended_at: $ended,
+              storage_path: $path,
+              duration_seconds: $dur,
+              file_size_bytes: $size,
+              program_name: "Morning Devotion",
+              title: ("Morning Devotion — " + $date)
+            }')
+
+          curl -sS --fail-with-body -X POST \
+            "${SUPABASE_URL}/functions/v1/radio-recorder" \
+            -H "Content-Type: application/json" \
+            -H "x-recorder-secret: ${WEBHOOK_SECRET}" \
+            -d "$PAYLOAD"
+
+      - name: Upload artifact (debug copy)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: morning-devotion-${{ steps.dates.outputs.broadcast_date }}
+          path: recording.mp3
+          retention-days: 7
+          if-no-files-found: ignore

@@ -6,6 +6,7 @@ import {
   Copy, Check, TrendingUp, Clock, X
 } from 'lucide-react';
 import { supabase, BlogPost } from '../lib/supabase';
+import UpcomingLiveStreams from '../components/UpcomingLiveStreams';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -467,6 +468,9 @@ const Blog = () => {
           </p>
         </div>
       </section>
+
+      {/* ── Upcoming Live Broadcasts ────────────────────────────── */}
+      <UpcomingLiveStreams limit={3} variant="card" title="Upcoming Live Broadcasts" />
 
       {/* ── Sticky filter bar ────────────────────────────────────── */}
       <div className="sticky top-16 lg:top-20 z-30

@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowRight, Heart, Users, Star, Calendar, Radio, Play, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import NewMemberForm from '../components/NewMemberForm';
+import UpcomingLiveStreams from '../components/UpcomingLiveStreams';
 
 const Home = () => {
   return (
@@ -75,6 +76,9 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* ── Upcoming Live Broadcasts (auto-populated from admin scheduling) ── */}
+      <UpcomingLiveStreams limit={3} variant="card" title="Upcoming Live Broadcasts" />
 
       {/* ── Quick Access ─────────────────────────────────────────────── */}
       <section className="py-20 bg-[#F8F7F4]">
