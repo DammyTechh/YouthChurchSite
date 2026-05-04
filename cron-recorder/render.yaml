@@ -1,0 +1,21 @@
+services:
+  - type: cron
+    name: morning-devotion-recorder
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: frankfurt        # closest to Lagos with low latency to Supabase EU/US
+    plan: free
+    schedule: "13 4 * * *"    # 04:13 UTC = 05:13 Africa/Lagos
+    envVars:
+      - key: SUPABASE_URL
+        sync: false           # set in Render dashboard
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: RADIO_RECORDER_WEBHOOK_SECRET
+        sync: false
+      - key: RADIO_STREAM_URL
+        sync: false
+      - key: DURATION
+        value: "1020"
+      - key: PROGRAM_NAME
+        value: "Morning Devotion"
