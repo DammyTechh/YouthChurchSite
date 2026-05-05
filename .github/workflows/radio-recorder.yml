@@ -198,6 +198,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           WEBHOOK_SECRET: ${{ secrets.RADIO_RECORDER_WEBHOOK_SECRET }}
+          SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           BCAST_DATE: ${{ steps.dates.outputs.broadcast_date }}
           STARTED_AT: ${{ steps.dates.outputs.started_at }}
           STORAGE_PATH: ${{ steps.upload.outputs.storage_path }}
@@ -229,6 +230,8 @@ jobs:
 
           HTTP=$(curl -sS -o register.json -w "%{http_code}" -X POST \
             "${SUPABASE_URL}/functions/v1/radio-recorder" \
+            -H "Authorization: Bearer ${SERVICE_ROLE}" \
+            -H "apikey: ${SERVICE_ROLE}" \
             -H "Content-Type: application/json" \
             -H "x-recorder-secret: ${WEBHOOK_SECRET}" \
             -d "$PAYLOAD")
