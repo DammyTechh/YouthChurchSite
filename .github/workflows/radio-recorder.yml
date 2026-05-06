@@ -1,36 +1,33 @@
-# Records the Morning Devotion broadcast every day from 05:14 to ~05:31
-# Africa/Lagos, encodes a clean MP3, uploads to Supabase Storage, and
-# registers the recording row via the radio-recorder edge function.
-#
-# Required GitHub repo secrets (Settings → Secrets and variables → Actions):
-#   SUPABASE_URL                  e.g. https://abcd.supabase.co
-#   SUPABASE_SERVICE_ROLE_KEY     service role key (NOT anon key)
-#   RADIO_RECORDER_WEBHOOK_SECRET same string set in Supabase secrets
-#   RADIO_STREAM_URL              https://cast5.my-control-panel.com/proxy/princefm/stream
-#
-# Manual run: Actions → Radio Recorder → Run workflow → optionally set duration
+﻿# Records the Morning Devotion broadcast every day from 05:14 to ~05:31
+# Africa/Lagos. Refuses to record at the wrong time even if GitHub
+# cron is severely delayed.
 
 name: Radio Recorder (Morning Devotion)
 
 on:
   schedule:
-    # 04:13 UTC = 05:13 Africa/Lagos (UTC+1, no DST)
-    - cron: "13 4 * * *"
+    # 03:30 UTC = 04:30 Lagos. 44 min buffer for GitHub cron delays.
+    - cron: "30 3 * * *"
   workflow_dispatch:
     inputs:
-      duration_seconds:
-        description: "Recording length in seconds (default 1020 = 17 min). For testing try 60."
+      mode:
+        description: "test = record now (60s default) | production = wait for next 05:14 Lagos"
         required: false
-        default: "1020"
+        default: "test"
+        type: choice
+        options: [test, production]
+      duration_seconds:
+        description: "Recording length in seconds (only used in test mode; default 60)"
+        required: false
+        default: "60"
 
 jobs:
   record:
     name: Capture & upload morning broadcast
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 60
 
     steps:
-      # ── 1. Validate secrets up-front ───────────────────────────────────
       - name: Validate required secrets
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -43,164 +40,159 @@ jobs:
           [ -z "$SERVICE_ROLE"   ] && missing="$missing SUPABASE_SERVICE_ROLE_KEY"
           [ -z "$WEBHOOK_SECRET" ] && missing="$missing RADIO_RECORDER_WEBHOOK_SECRET"
           [ -z "$STREAM_URL"     ] && missing="$missing RADIO_STREAM_URL"
-          if [ -n "$missing" ]; then
-            echo "::error::Missing required GitHub secrets:$missing"
-            echo ""
-            echo "Add them under: Settings → Secrets and variables → Actions → New repository secret"
-            echo ""
-            echo "Required secrets and where each value comes from:"
-            echo "  SUPABASE_URL                  → Supabase Dashboard → Settings → API → Project URL"
-            echo "  SUPABASE_SERVICE_ROLE_KEY     → Supabase Dashboard → Settings → API → service_role key"
-            echo "  RADIO_RECORDER_WEBHOOK_SECRET → any random string; must match the same value set with: supabase secrets set RADIO_RECORDER_WEBHOOK_SECRET=..."
-            echo "  RADIO_STREAM_URL              → https://cast5.my-control-panel.com/proxy/princefm/stream"
-            exit 1
-          fi
-          echo "✅ All 4 required secrets are present."
-          # Print non-secret prefixes so we can debug typos without exposing values
-          echo "SUPABASE_URL prefix: $(echo "$SUPABASE_URL" | cut -c1-30)..."
-          echo "STREAM_URL  prefix: $(echo "$STREAM_URL"   | cut -c1-50)..."
+          [ -n "$missing" ] && { echo "::error::Missing secrets:$missing"; exit 1; }
+          echo "All secrets present."
 
-      # ── 2. Install dependencies ────────────────────────────────────────
       - name: Install ffmpeg + curl + jq
         run: |
           sudo apt-get update -y
           sudo apt-get install -y ffmpeg curl jq
-          ffmpeg -version | head -1
 
-      # ── 3. Verify the stream URL is reachable BEFORE waiting ───────────
+      - name: Determine mode + show current Lagos time
+        id: ctx
+        run: |
+          export TZ="Africa/Lagos"
+          NOW_LAGOS_HMS="$(date '+%H:%M:%S')"
+          BCAST_DATE="$(date '+%F')"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            MODE="production"
+          else
+            MODE="${{ github.event.inputs.mode }}"
+            [ -z "$MODE" ] && MODE="test"
+          fi
+          echo "Current Lagos time: $NOW_LAGOS_HMS"
+          echo "Broadcast date: $BCAST_DATE"
+          echo "Mode: $MODE"
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "broadcast_date=$BCAST_DATE" >> "$GITHUB_OUTPUT"
+
+      - name: Verify we can hit the 05:14 Lagos window
+        if: steps.ctx.outputs.mode == 'production'
+        run: |
+          export TZ="Africa/Lagos"
+          NOW_S="$(date +%s)"
+          OPEN_S="$(date -d 'today 05:14:00' +%s)"
+          CLOSE_S="$(date -d 'today 05:31:00' +%s)"
+          if [ "$NOW_S" -ge "$CLOSE_S" ]; then
+            echo "::error::Cron fired AFTER the broadcast window ended (now > 05:31 Lagos)."
+            echo "Today's broadcast was missed due to GitHub cron delay. No recording made."
+            exit 1
+          fi
+          if [ "$NOW_S" -lt "$OPEN_S" ]; then
+            DIFF=$(( OPEN_S - NOW_S ))
+            MIN=$(( DIFF / 60 ))
+            echo "Sleeping ${MIN}m until 05:14 Lagos..."
+            sleep "$DIFF"
+            echo "Reached 05:14 Lagos."
+          else
+            LATE=$(( NOW_S - OPEN_S ))
+            MIN=$(( LATE / 60 ))
+            echo "::warning::Cron fired ${MIN} min after 05:14. Capturing remaining time."
+          fi
+
+      - name: Check for existing real recording (test mode)
+        if: steps.ctx.outputs.mode == 'test'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BCAST_DATE: ${{ steps.ctx.outputs.broadcast_date }}
+        run: |
+          set -e
+          RES=$(curl -sS \
+            "${SUPABASE_URL}/rest/v1/radio_recordings?broadcast_date=eq.${BCAST_DATE}&program_name=eq.Morning%20Devotion&select=duration_seconds" \
+            -H "apikey: ${SERVICE_ROLE}" \
+            -H "Authorization: Bearer ${SERVICE_ROLE}")
+          DUR=$(echo "$RES" | jq -r '.[0].duration_seconds // 0')
+          echo "Existing duration today: ${DUR}s"
+          if [ "$DUR" -ge 600 ]; then
+            echo "::error::Today already has a real recording (${DUR}s). Refusing to overwrite."
+            exit 1
+          fi
+
+      - name: Compute recording duration
+        id: dur
+        run: |
+          export TZ="Africa/Lagos"
+          if [ "${{ steps.ctx.outputs.mode }}" = "test" ]; then
+            D="${{ github.event.inputs.duration_seconds }}"
+            [ -z "$D" ] && D=60
+            echo "Test mode — recording $D seconds"
+          else
+            NOW_S="$(date +%s)"
+            CLOSE_S="$(date -d 'today 05:31:00' +%s)"
+            D=$(( CLOSE_S - NOW_S ))
+            [ "$D" -le 0 ] && { echo "::error::No time left in window"; exit 1; }
+            [ "$D" -gt 1200 ] && D=1200
+            echo "Production mode — recording $D seconds"
+          fi
+          echo "duration=$D" >> "$GITHUB_OUTPUT"
+
       - name: Test stream URL reachability
         env:
           STREAM_URL: ${{ secrets.RADIO_STREAM_URL }}
         run: |
           set +e
-          echo "Testing $STREAM_URL ..."
-          # Some shoutcast/icecast streams reject HEAD; fall back to a short GET
-          HTTP=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 15 -I "$STREAM_URL")
-          if [ "$HTTP" = "000" ] || [ "$HTTP" -ge 400 ]; then
-            echo "HEAD returned $HTTP — trying short GET..."
-            HTTP=$(curl -sS -o /tmp/stream_probe.bin -w "%{http_code}" --max-time 8 "$STREAM_URL" || true)
-          fi
-          echo "HTTP status: $HTTP"
-          if [ "$HTTP" = "000" ]; then
-            echo "::error::Could not reach $STREAM_URL — DNS, firewall, or the radio server is down."
-            exit 1
-          fi
-          if [ "$HTTP" -ge 400 ] && [ "$HTTP" -lt 500 ]; then
-            echo "::error::Stream URL returned $HTTP. Check the URL is correct and the stream is currently broadcasting."
-            exit 1
-          fi
-          echo "✅ Stream URL appears reachable (HTTP $HTTP)."
+          HTTP=$(curl -sS -o /tmp/probe -w "%{http_code}" --max-time 8 "$STREAM_URL" || true)
+          echo "Stream HTTP: $HTTP"
+          [ "$HTTP" = "000" ] && { echo "::error::Stream unreachable"; exit 1; }
+          [ "$HTTP" -ge 400 ] && [ "$HTTP" -lt 500 ] && { echo "::error::Stream HTTP $HTTP"; exit 1; }
 
-      # ── 4. Compute broadcast date in Africa/Lagos ──────────────────────
-      - name: Compute broadcast date (Africa/Lagos)
-        id: dates
-        run: |
-          export TZ="Africa/Lagos"
-          BCAST_DATE="$(date +%F)"
-          STARTED_AT="$(date -u +%FT%TZ)"
-          echo "broadcast_date=$BCAST_DATE" >> "$GITHUB_OUTPUT"
-          echo "started_at=$STARTED_AT" >> "$GITHUB_OUTPUT"
-          echo "Broadcast date (Lagos): $BCAST_DATE"
-          echo "Started at (UTC):       $STARTED_AT"
-
-      # ── 5. Wait until 05:14 Lagos (skip on manual trigger) ─────────────
-      - name: Wait until 05:14 Africa/Lagos
-        run: |
-          export TZ="Africa/Lagos"
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "Manual trigger — starting immediately."
-            exit 0
-          fi
-          NOW_S="$(date +%s)"
-          TARGET_S="$(date -d 'today 05:14:00' +%s)"
-          DIFF=$(( TARGET_S - NOW_S ))
-          if [ "$DIFF" -gt 0 ]; then
-            MIN=$(( DIFF / 60 ))
-            echo "Sleeping ${DIFF}s (~${MIN} min) until 05:14 Africa/Lagos..."
-            sleep "$DIFF"
-          else
-            echo "Cron fired late — recording will start now ($DIFF s after 05:14)."
-          fi
-
-      # ── 6. Record the stream ───────────────────────────────────────────
       - name: Record stream with ffmpeg
         id: record
         env:
           STREAM_URL: ${{ secrets.RADIO_STREAM_URL }}
-          DURATION: ${{ github.event.inputs.duration_seconds || '1020' }}
+          DURATION: ${{ steps.dur.outputs.duration }}
         run: |
           set -e
-          OUT="recording.mp3"
-          echo "Recording $DURATION seconds from $STREAM_URL"
-          # Clean-audio chain:
-          #   loudnorm  → EBU R128 normalization (consistent volume across days)
-          #   highpass  → cut sub-80 Hz rumble & breath thumps
-          #   lowpass   → soften any source hiss above 15 kHz
-          #   128 kbps stereo MP3 at 44.1 kHz — small, clean, universal
+          export TZ="Africa/Lagos"
+          STARTED_AT="$(date -u +%FT%TZ)"
+          STARTED_LAGOS="$(date '+%Y-%m-%d %H:%M:%S %Z')"
+          echo "Recording starts: $STARTED_LAGOS"
           ffmpeg -hide_banner -loglevel info \
             -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
             -i "$STREAM_URL" \
             -t "$DURATION" \
-            -vn \
-            -ac 2 -ar 44100 \
+            -vn -ac 2 -ar 44100 \
             -af "loudnorm=I=-16:TP=-1.5:LRA=11,highpass=f=80,lowpass=f=15000" \
             -codec:a libmp3lame -b:a 128k \
-            "$OUT" 2>&1 | tail -40
-
-          if [ ! -s "$OUT" ]; then
-            echo "::error::ffmpeg produced an empty file. The stream may have been silent or unreachable."
-            exit 1
-          fi
-
-          ls -lh "$OUT"
-          SIZE="$(stat -c%s "$OUT")"
-          DUR="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "$OUT" | cut -d. -f1)"
+            recording.mp3 2>&1 | tail -20
+          [ ! -s "recording.mp3" ] && { echo "::error::Empty file"; exit 1; }
+          SIZE="$(stat -c%s recording.mp3)"
+          DUR="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 recording.mp3 | cut -d. -f1)"
+          echo "started_at=$STARTED_AT" >> "$GITHUB_OUTPUT"
           echo "size=$SIZE" >> "$GITHUB_OUTPUT"
           echo "duration=$DUR" >> "$GITHUB_OUTPUT"
-          echo "✅ Captured ${SIZE} bytes / ${DUR} seconds"
+          echo "Captured ${SIZE} bytes / ${DUR} seconds"
 
-      # ── 7. Upload MP3 to Supabase Storage ──────────────────────────────
       - name: Upload to Supabase Storage
         id: upload
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          BCAST_DATE: ${{ steps.dates.outputs.broadcast_date }}
+          BCAST_DATE: ${{ steps.ctx.outputs.broadcast_date }}
         run: |
           set -e
           STORAGE_PATH="radio/${BCAST_DATE}.mp3"
           UPLOAD_URL="${SUPABASE_URL}/storage/v1/object/radio-recordings/${STORAGE_PATH}"
-          echo "Uploading to ${SUPABASE_URL}/storage/v1/object/radio-recordings/${STORAGE_PATH}"
-
           HTTP=$(curl -sS -o upload.json -w "%{http_code}" -X POST "$UPLOAD_URL" \
             -H "Authorization: Bearer ${SERVICE_ROLE}" \
             -H "apikey: ${SERVICE_ROLE}" \
             -H "Content-Type: audio/mpeg" \
             -H "x-upsert: true" \
             --data-binary @recording.mp3)
-
           echo "HTTP $HTTP"
-          cat upload.json || true
+          cat upload.json
           echo ""
-          if [ "$HTTP" -ge 300 ]; then
-            echo "::error::Upload failed with HTTP $HTTP."
-            echo "Check that:"
-            echo "  1. The 'radio-recordings' storage bucket exists (created by migration 20260429000002)"
-            echo "  2. SUPABASE_SERVICE_ROLE_KEY is the SERVICE ROLE key, not the anon key"
-            echo "  3. The bucket policy allows service_role to insert (in the migration)"
-            exit 1
-          fi
+          [ "$HTTP" -ge 300 ] && exit 1
           echo "storage_path=$STORAGE_PATH" >> "$GITHUB_OUTPUT"
-          echo "✅ Upload succeeded."
 
-      # ── 8. Register the recording in the database ─────────────────────
       - name: Register recording row
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           WEBHOOK_SECRET: ${{ secrets.RADIO_RECORDER_WEBHOOK_SECRET }}
           SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          BCAST_DATE: ${{ steps.dates.outputs.broadcast_date }}
-          STARTED_AT: ${{ steps.dates.outputs.started_at }}
+          BCAST_DATE: ${{ steps.ctx.outputs.broadcast_date }}
+          STARTED_AT: ${{ steps.record.outputs.started_at }}
           STORAGE_PATH: ${{ steps.upload.outputs.storage_path }}
           DURATION: ${{ steps.record.outputs.duration }}
           SIZE: ${{ steps.record.outputs.size }}
@@ -208,26 +200,12 @@ jobs:
           set -e
           ENDED_AT="$(date -u +%FT%TZ)"
           PAYLOAD=$(jq -n \
-            --arg date "$BCAST_DATE" \
-            --arg started "$STARTED_AT" \
-            --arg ended "$ENDED_AT" \
-            --arg path "$STORAGE_PATH" \
-            --argjson dur "${DURATION:-0}" \
-            --argjson size "${SIZE:-0}" \
-            '{
-              broadcast_date: $date,
-              broadcast_started_at: $started,
-              broadcast_ended_at: $ended,
-              storage_path: $path,
-              duration_seconds: $dur,
-              file_size_bytes: $size,
-              program_name: "Morning Devotion",
-              title: ("Morning Devotion — " + $date)
-            }')
-
-          echo "Posting to ${SUPABASE_URL}/functions/v1/radio-recorder"
-          echo "$PAYLOAD" | jq .
-
+            --arg date "$BCAST_DATE" --arg started "$STARTED_AT" \
+            --arg ended "$ENDED_AT" --arg path "$STORAGE_PATH" \
+            --argjson dur "${DURATION:-0}" --argjson size "${SIZE:-0}" \
+            '{broadcast_date: $date, broadcast_started_at: $started, broadcast_ended_at: $ended,
+              storage_path: $path, duration_seconds: $dur, file_size_bytes: $size,
+              program_name: "Morning Devotion", title: ("Morning Devotion — " + $date)}')
           HTTP=$(curl -sS -o register.json -w "%{http_code}" -X POST \
             "${SUPABASE_URL}/functions/v1/radio-recorder" \
             -H "Authorization: Bearer ${SERVICE_ROLE}" \
@@ -236,26 +214,16 @@ jobs:
             -H "x-recorder-secret: ${WEBHOOK_SECRET}" \
             -d "$PAYLOAD")
           echo "HTTP $HTTP"
-          cat register.json || true
+          cat register.json
           echo ""
-          if [ "$HTTP" -ge 300 ]; then
-            echo "::error::Register call failed with HTTP $HTTP."
-            echo "Check that:"
-            echo "  1. The radio-recorder edge function is deployed (supabase functions deploy radio-recorder)"
-            echo "  2. RADIO_RECORDER_WEBHOOK_SECRET matches in BOTH:"
-            echo "     - GitHub repo secrets"
-            echo "     - Supabase secrets (run: supabase secrets set RADIO_RECORDER_WEBHOOK_SECRET=...)"
-            echo "  3. The radio_recordings table exists (migration 20260429000002)"
-            exit 1
-          fi
-          echo "✅ Recording registered."
+          [ "$HTTP" -ge 300 ] && exit 1
+          echo "Recording registered."
 
-      # ── 9. Always upload the MP3 as a workflow artifact for debugging ─
       - name: Upload artifact (debug copy)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: morning-devotion-${{ steps.dates.outputs.broadcast_date }}
+          name: morning-devotion-${{ steps.ctx.outputs.broadcast_date }}
           path: recording.mp3
           retention-days: 7
           if-no-files-found: ignore
