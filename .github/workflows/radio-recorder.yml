@@ -5,9 +5,6 @@
 name: Radio Recorder (Morning Devotion)
 
 on:
-  schedule:
-    # 03:30 UTC = 04:30 Lagos. 44 min buffer for GitHub cron delays.
-    - cron: "30 3 * * *"
   workflow_dispatch:
     inputs:
       mode:
