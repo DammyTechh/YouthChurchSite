@@ -1,21 +1,24 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   Radio as RadioIcon, Video, VideoOff, Mic, MicOff,
-  Youtube, Facebook, Instagram, Music, Plus, Link2, Calendar, Play, Square,
+  Plus, Link2, Calendar, Play, Square,
   Wand2, History, Loader2, CheckCircle, AlertTriangle, Eye, KeyRound, Trash2, Camera
 } from 'lucide-react';
 import {
   supabase, SocialConnection, LiveStream, SocialPlatform, StreamDestination
 } from '../lib/supabase';
 import { BroadcastEngine, DEFAULT_FILTER, VideoFilter, publishWHIP } from '../lib/broadcast-engine';
+import { YouTubeIcon, FacebookIcon, InstagramIcon, TikTokIcon, BrandIconProps } from './BrandIcons';
 
 const FUNCTIONS_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
-const PLATFORM_META: Record<SocialPlatform, { label: string; color: string; Icon: typeof Youtube; supportsOAuth: boolean; supportsManual: boolean; comingSoon?: boolean }> = {
-  youtube:   { label: 'YouTube',   color: '#dc2626', Icon: Youtube,   supportsOAuth: true,  supportsManual: true  },
-  facebook:  { label: 'Facebook',  color: '#1877f2', Icon: Facebook,  supportsOAuth: true,  supportsManual: true  },
-  instagram: { label: 'Instagram', color: '#dd2a7b', Icon: Instagram, supportsOAuth: false, supportsManual: true  },
-  tiktok:    { label: 'TikTok',    color: '#000000', Icon: Music,     supportsOAuth: false, supportsManual: false, comingSoon: true },
+type BrandIcon = React.FC<BrandIconProps>;
+
+const PLATFORM_META: Record<SocialPlatform, { label: string; color: string; Icon: BrandIcon; supportsOAuth: boolean; supportsManual: boolean; comingSoon?: boolean }> = {
+  youtube:   { label: 'YouTube',   color: '#dc2626', Icon: YouTubeIcon,   supportsOAuth: true,  supportsManual: true  },
+  facebook:  { label: 'Facebook',  color: '#1877f2', Icon: FacebookIcon,  supportsOAuth: true,  supportsManual: true  },
+  instagram: { label: 'Instagram', color: '#dd2a7b', Icon: InstagramIcon, supportsOAuth: false, supportsManual: true  },
+  tiktok:    { label: 'TikTok',    color: '#000000', Icon: TikTokIcon,    supportsOAuth: false, supportsManual: false, comingSoon: true },
 };
 
 interface AdminLiveStudioProps {

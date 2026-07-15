@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Phone, Mail } from 'lucide-react';
+import { InstagramIcon, YouTubeIcon, FacebookIcon, TikTokIcon } from './BrandIcons';
 import { SOCIALS } from '../lib/socials';
 
 interface HeaderProps { onNavigate: () => void; }
@@ -31,13 +32,6 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
     { path: '/about',    label: 'About'     },
   ];
 
-  const socialIcons = [
-    { name: 'IG',  url: SOCIALS.instagram.url, emoji: '📸' },
-    { name: 'YT',  url: SOCIALS.youtube.url,   emoji: '▶️' },
-    { name: 'FB',  url: SOCIALS.facebook.url,  emoji: '👥' },
-    { name: 'TT',  url: SOCIALS.tiktok.url,    emoji: '🎵' },
-  ];
-
   const handleNavClick = () => { setMenuOpen(false); onNavigate(); };
 
   return (
@@ -51,7 +45,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
         {/* Logo */}
         <Link to="/" onClick={handleNavClick} className="flex items-center gap-3 z-50 flex-shrink-0">
           <div className="w-10 h-10 rounded-lg overflow-hidden ring-1 ring-[#C9A84C]/40">
-            <img src="https://imgur.com/7Rm4DNu.png" alt="RuggedYouth" className="w-full h-full object-cover" />
+            <img src="https://imgur.com/bdwOYsa.png" alt="RuggedYouth" className="w-full h-full object-cover" />
           </div>
           <span className="font-display text-lg font-semibold text-white tracking-wide">
             Rugged<span className="text-[#C9A84C]">Youth</span>
@@ -94,7 +88,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg overflow-hidden ring-1 ring-[#C9A84C]/40">
-              <img src="https://imgur.com/7Rm4DNu.png" alt="RuggedYouth" className="w-full h-full object-cover" />
+              <img src="https://imgur.com/bdwOYsa.png" alt="RuggedYouth" className="w-full h-full object-cover" />
             </div>
             <span className="font-display text-sm font-semibold text-white">
               Rugged<span className="text-[#C9A84C]">Youth</span>
@@ -125,16 +119,16 @@ const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
           <p className="text-xs font-semibold text-white/30 uppercase tracking-widest mb-3">Follow Us</p>
           <div className="flex gap-2 mb-4">
             {[
-              { label: 'Instagram', url: SOCIALS.instagram.url, bg: 'bg-gradient-to-br from-purple-500 to-pink-500', text: 'IG' },
-              { label: 'YouTube',   url: SOCIALS.youtube.url,   bg: 'bg-red-600',   text: 'YT' },
-              { label: 'Facebook',  url: SOCIALS.facebook.url,  bg: 'bg-blue-600',  text: 'FB' },
-              { label: 'TikTok',    url: SOCIALS.tiktok.url,    bg: 'bg-[#010101] border border-white/20', text: 'TK' },
+              { label: 'Instagram', url: SOCIALS.instagram.url, bg: 'bg-gradient-to-br from-[#FEDA75] via-[#D62976] to-[#4F5BD5]', icon: <InstagramIcon className="w-5 h-5" /> },
+              { label: 'YouTube',   url: SOCIALS.youtube.url,   bg: 'bg-[#FF0000]', icon: <YouTubeIcon className="w-5 h-5" /> },
+              { label: 'Facebook',  url: SOCIALS.facebook.url,  bg: 'bg-[#0866FF]', icon: <FacebookIcon className="w-5 h-5" /> },
+              { label: 'TikTok',    url: SOCIALS.tiktok.url,    bg: 'bg-black border border-white/20', icon: <TikTokIcon className="w-[18px] h-[18px]" /> },
             ].map(s => (
               <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer"
                 className={`w-10 h-10 ${s.bg} rounded-xl flex items-center justify-center
-                  text-white text-xs font-bold hover:scale-105 transition-transform`}
+                  text-white hover:scale-105 transition-transform shadow-sm`}
                 aria-label={s.label}>
-                {s.text}
+                {s.icon}
               </a>
             ))}
           </div>

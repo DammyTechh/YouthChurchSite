@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ExternalLink, Youtube, Instagram, Facebook, Music, Play, Search, X } from 'lucide-react';
+import { ExternalLink, Play, Search, X } from 'lucide-react';
+import { YouTubeIcon, InstagramIcon, TikTokIcon, FacebookIcon } from '../components/BrandIcons';
 import { supabase, SocialMediaPost } from '../lib/supabase';
 import { SOCIALS } from '../lib/socials';
 
@@ -108,10 +109,10 @@ const Media = () => {
   }, []);
 
   const platformConfig: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
-    youtube:  { icon: <Youtube className="w-4 h-4" />,   color: '#FF0000', label: 'YouTube' },
-    instagram:{ icon: <Instagram className="w-4 h-4" />, color: '#E1306C', label: 'Instagram' },
-    tiktok:   { icon: <Music className="w-4 h-4" />,     color: '#010101', label: 'TikTok' },
-    facebook: { icon: <Facebook className="w-4 h-4" />,  color: '#1877F2', label: 'Facebook' },
+    youtube:  { icon: <YouTubeIcon className="w-4 h-4" />,   color: '#FF0000', label: 'YouTube' },
+    instagram:{ icon: <InstagramIcon className="w-4 h-4" />, color: '#E1306C', label: 'Instagram' },
+    tiktok:   { icon: <TikTokIcon className="w-4 h-4" />,    color: '#010101', label: 'TikTok' },
+    facebook: { icon: <FacebookIcon className="w-4 h-4" />,  color: '#1877F2', label: 'Facebook' },
   };
 
   const channels = [

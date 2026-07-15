@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
-  Heart, MessageCircle, Share2, ArrowLeft, Send, Play, Headphones,
+  Heart, MessageCircle, Share2, ArrowLeft, Send, Headphones,
   Copy, Check, ExternalLink, Link as LinkIcon, BookOpen,
-  Clock, User, ChevronDown, ChevronUp, X, Reply
+  Clock, User, ChevronDown, ChevronUp, X, Reply, Mail
 } from 'lucide-react';
+import { WhatsAppIcon, FacebookIcon, XIcon, InstagramIcon, LinkedInIcon } from '../components/BrandIcons';
 import { supabase, BlogPost as BlogPostType, BlogComment } from '../lib/supabase';
 
 const fmtDate = (d: string) =>
@@ -39,12 +40,12 @@ const SharePanel = ({ post, onClose }: { post: BlogPostType; onClose?: () => voi
   };
 
   const platforms = [
-    { name: 'WhatsApp',    emoji: '💬', bg: 'bg-[#25D366]',                                                          href: `https://wa.me/?text=${txt}%20${enc}` },
-    { name: 'Facebook',    emoji: '📘', bg: 'bg-[#1877F2]',                                                          href: `https://www.facebook.com/sharer/sharer.php?u=${enc}` },
-    { name: 'Twitter / X', emoji: '🐦', bg: 'bg-[#0F1419]',                                                          href: `https://twitter.com/intent/tweet?text=${txt}&url=${enc}` },
-    { name: 'Instagram',   emoji: '📸', bg: 'bg-gradient-to-br from-[#833AB4] via-[#E1306C] to-[#F77737]',           href: 'https://www.instagram.com/ruggedyouth_4christ' },
-    { name: 'LinkedIn',    emoji: '💼', bg: 'bg-[#0A66C2]',                                                          href: `https://www.linkedin.com/sharing/share-offsite/?url=${enc}` },
-    { name: 'Email',       emoji: '✉️', bg: 'bg-[#4A4A6A]',                                                          href: `mailto:?subject=${txt}&body=${enc}` },
+    { name: 'WhatsApp',    icon: <WhatsAppIcon className="w-5 h-5" />,  bg: 'bg-[#25D366]',                                                          href: `https://wa.me/?text=${txt}%20${enc}` },
+    { name: 'Facebook',    icon: <FacebookIcon className="w-5 h-5" />,  bg: 'bg-[#0866FF]',                                                          href: `https://www.facebook.com/sharer/sharer.php?u=${enc}` },
+    { name: 'Twitter / X', icon: <XIcon className="w-[18px] h-[18px]" />, bg: 'bg-black',                                                            href: `https://twitter.com/intent/tweet?text=${txt}&url=${enc}` },
+    { name: 'Instagram',   icon: <InstagramIcon className="w-5 h-5" />, bg: 'bg-gradient-to-br from-[#FEDA75] via-[#D62976] to-[#4F5BD5]',           href: 'https://www.instagram.com/ruggedyouth_4christ' },
+    { name: 'LinkedIn',    icon: <LinkedInIcon className="w-5 h-5" />,  bg: 'bg-[#0A66C2]',                                                          href: `https://www.linkedin.com/sharing/share-offsite/?url=${enc}` },
+    { name: 'Email',       icon: <Mail className="w-5 h-5" />,          bg: 'bg-[#4A4A6A]',                                                          href: `mailto:?subject=${txt}&body=${enc}` },
   ];
 
   return (
@@ -73,7 +74,7 @@ const SharePanel = ({ post, onClose }: { post: BlogPostType; onClose?: () => voi
         {platforms.map(p => (
           <a key={p.name} href={p.href} target="_blank" rel="noopener noreferrer"
             className={`flex flex-col items-center justify-center gap-1.5 py-3 px-2 ${p.bg} text-white rounded-xl text-xs font-semibold transition-all hover:-translate-y-0.5 hover:shadow-md`}>
-            <span className="text-lg leading-none">{p.emoji}</span>
+            <span className="leading-none">{p.icon}</span>
             <span className="leading-none">{p.name.split('/')[0]}</span>
           </a>
         ))}

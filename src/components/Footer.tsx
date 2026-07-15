@@ -1,16 +1,18 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Radio, Facebook, Instagram, Music, Youtube, Heart, Phone, Mail } from 'lucide-react';
+import { Heart, Phone, Mail } from 'lucide-react';
+import { FacebookIcon, InstagramIcon, TikTokIcon, YouTubeIcon, WhatsAppIcon } from './BrandIcons';
 import { SOCIALS, WHATSAPP_URL } from '../lib/socials';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   const socialLinks = [
-    { name: 'Facebook',  icon: <Facebook className="w-4 h-4" />,  url: SOCIALS.facebook.url  },
-    { name: 'Instagram', icon: <Instagram className="w-4 h-4" />, url: SOCIALS.instagram.url },
-    { name: 'TikTok',    icon: <Music className="w-4 h-4" />,     url: SOCIALS.tiktok.url    },
-    { name: 'YouTube',   icon: <Youtube className="w-4 h-4" />,   url: SOCIALS.youtube.url   },
+    { name: 'Facebook',  icon: <FacebookIcon className="w-[18px] h-[18px]" />,  url: SOCIALS.facebook.url,  hover: 'hover:bg-[#0866FF] hover:border-[#0866FF]' },
+    { name: 'Instagram', icon: <InstagramIcon className="w-[18px] h-[18px]" />, url: SOCIALS.instagram.url, hover: 'hover:bg-gradient-to-br hover:from-[#FEDA75] hover:via-[#D62976] hover:to-[#4F5BD5] hover:border-transparent' },
+    { name: 'TikTok',    icon: <TikTokIcon className="w-[18px] h-[18px]" />,     url: SOCIALS.tiktok.url,     hover: 'hover:bg-black hover:border-white/40' },
+    { name: 'YouTube',   icon: <YouTubeIcon className="w-[18px] h-[18px]" />,   url: SOCIALS.youtube.url,     hover: 'hover:bg-[#FF0000] hover:border-[#FF0000]' },
+    { name: 'WhatsApp',  icon: <WhatsAppIcon className="w-[18px] h-[18px]" />,   url: WHATSAPP_URL,            hover: 'hover:bg-[#25D366] hover:border-[#25D366]' },
   ];
 
   const navLinks = [
@@ -33,7 +35,7 @@ const Footer = () => {
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 rounded-lg overflow-hidden ring-1 ring-[#C9A84C]/30">
-                <img src="https://imgur.com/7Rm4DNu.png" alt="RuggedYouth" className="w-full h-full object-cover" />
+                <img src="https://imgur.com/bdwOYsa.png" alt="RuggedYouth" className="w-full h-full object-cover" />
               </div>
               <span className="font-display text-lg font-semibold">
                 Rugged<span className="text-[#C9A84C]">Youth</span>
@@ -49,7 +51,7 @@ const Footer = () => {
             <div className="flex gap-2">
               {socialLinks.map(s => (
                 <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-lg bg-white/8 border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/15 transition-all"
+                  className={`w-9 h-9 rounded-lg bg-white/8 border border-white/10 flex items-center justify-center text-white/60 hover:text-white transition-all duration-200 hover:scale-105 ${s.hover}`}
                   aria-label={s.name}>
                   {s.icon}
                 </a>

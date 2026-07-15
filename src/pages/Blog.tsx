@@ -6,6 +6,7 @@ import {
   Copy, Check, TrendingUp, Clock, X
 } from 'lucide-react';
 import { supabase, BlogPost } from '../lib/supabase';
+import { WhatsAppIcon, FacebookIcon, XIcon, InstagramIcon } from '../components/BrandIcons';
 import UpcomingLiveStreams from '../components/UpcomingLiveStreams';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -37,10 +38,10 @@ const CardShareMenu = ({ post, onClose }: { post: BlogPost; onClose: () => void 
   const txt = encodeURIComponent(post.title);
 
   const options = [
-    { label: 'WhatsApp',    icon: '💬', href: `https://wa.me/?text=${txt}%20${enc}` },
-    { label: 'Facebook',    icon: '📘', href: `https://www.facebook.com/sharer/sharer.php?u=${enc}` },
-    { label: 'Twitter / X', icon: '🐦', href: `https://twitter.com/intent/tweet?text=${txt}&url=${enc}` },
-    { label: 'Instagram',   icon: '📸', href: 'https://www.instagram.com/ruggedyouth_4christ' },
+    { label: 'WhatsApp',    icon: <WhatsAppIcon className="w-3.5 h-3.5" />,  bg: '#25D366', href: `https://wa.me/?text=${txt}%20${enc}` },
+    { label: 'Facebook',    icon: <FacebookIcon className="w-3.5 h-3.5" />,  bg: '#0866FF', href: `https://www.facebook.com/sharer/sharer.php?u=${enc}` },
+    { label: 'Twitter / X', icon: <XIcon className="w-3 h-3" />,             bg: '#000000', href: `https://twitter.com/intent/tweet?text=${txt}&url=${enc}` },
+    { label: 'Instagram',   icon: <InstagramIcon className="w-3.5 h-3.5" />, bg: 'linear-gradient(135deg,#FEDA75,#D62976,#4F5BD5)', href: 'https://www.instagram.com/ruggedyouth_4christ' },
   ];
 
   const copy = async () => {
@@ -63,7 +64,8 @@ const CardShareMenu = ({ post, onClose }: { post: BlogPost; onClose: () => void 
           onClick={onClose}
           className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#1A1A2E]
             hover:bg-[#F8F7F4] transition-colors">
-          <span>{o.icon}</span> {o.label}
+          <span className="w-7 h-7 rounded-full flex items-center justify-center text-white flex-shrink-0"
+            style={{ background: o.bg }}>{o.icon}</span> {o.label}
         </a>
       ))}
       <div className="h-px bg-[#EEEAE4] mx-4" />

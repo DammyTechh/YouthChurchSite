@@ -28,7 +28,7 @@ const ConfirmEmail = () => {
   return (
     <div className="min-h-screen bg-[#0F0E1A] flex items-center justify-center p-4" style={{backgroundImage:'radial-gradient(ellipse at 30% 40%, rgba(61,31,110,0.5) 0%, transparent 50%)'}}>
       <div className="w-full max-w-md text-center">
-        <img src="https://imgur.com/7Rm4DNu.png" alt="RuggedYouth" className="w-16 h-16 rounded-2xl mx-auto mb-6 ring-2 ring-[#C9A84C]/30"/>
+        <img src="https://imgur.com/bdwOYsa.png" alt="RuggedYouth" className="w-16 h-16 rounded-2xl mx-auto mb-6 ring-2 ring-[#C9A84C]/30"/>
         <div className="bg-white/5 border border-white/10 rounded-2xl p-10">
           <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 border" style={{
             background: status==='success'?'rgba(201,168,76,0.12)':status==='error'?'rgba(239,68,68,0.1)':'rgba(255,255,255,0.05)',

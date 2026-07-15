@@ -1,10 +1,18 @@
-﻿# Records the Morning Devotion broadcast every day from 05:14 to ~05:31
+# Records the Morning Devotion broadcast every day from 05:14 to ~05:31
 # Africa/Lagos. Refuses to record at the wrong time even if GitHub
 # cron is severely delayed.
 
 name: Radio Recorder (Morning Devotion)
 
 on:
+  schedule:
+    # 04:00 UTC == 05:00 Africa/Lagos (UTC+1, no DST).
+    # Fires ~14 min before the 05:14 broadcast window opens. The job's
+    # "Verify we can hit the window" step then sleeps until 05:14 and records
+    # the full session. It is scheduled deliberately early because GitHub's
+    # cron frequently runs several minutes late — this buffer keeps the daily
+    # recording from being cut short or missed entirely.
+    - cron: "0 4 * * *"
   workflow_dispatch:
     inputs:
       mode:

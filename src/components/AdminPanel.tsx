@@ -2,12 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   LayoutDashboard, Calendar, Image as ImageIcon, BookOpen, Users, Settings,
   LogOut, Plus, Edit, Trash2, Upload, Eye, EyeOff, X, CheckCircle,
-  AlertCircle, Menu, Youtube, Instagram, Facebook, Music,
+  AlertCircle, Menu,
   Lock, Mail, User, Key, Search,
   Heart, MessageCircle, Headphones, Play, Reply, Send,
   Radio as RadioIcon
 } from 'lucide-react';
 import { supabase, SocialMediaPost, UpcomingEvent, BlogPost, NewMember } from '../lib/supabase';
+import { PlatformIcon } from './BrandIcons';
 import AdminLiveStudio from './AdminLiveStudio';
 
 type DbMediaType = 'text' | 'image' | 'video' | 'audio';
@@ -42,14 +43,6 @@ function toDbMediaType(t: UiMediaType): DbMediaType {
 const platColors: Record<string, string> = {
   youtube: '#dc2626', instagram: '#9333ea', tiktok: '#111', facebook: '#2563eb',
 };
-function PlatformIcon({ platform }: { platform: string }) {
-  if (platform === 'youtube') return <Youtube className="w-4 h-4" />;
-  if (platform === 'instagram') return <Instagram className="w-4 h-4" />;
-  if (platform === 'tiktok') return <Music className="w-4 h-4" />;
-  if (platform === 'facebook') return <Facebook className="w-4 h-4" />;
-  return null;
-}
-
 /* ── Notification ── */
 const Notif = ({ msg, onClose }: { msg: { type: 'success' | 'error'; text: string }; onClose: () => void }) => (
   <div className={`fixed top-5 right-5 z-[9999] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl text-sm font-medium max-w-sm border ${msg.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
@@ -101,7 +94,7 @@ const AuthScreen = ({ onAuth }: { onAuth: (user: AuthUser) => void }) => {
     <div className="min-h-screen bg-[#0F0E1A] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="https://imgur.com/7Rm4DNu.png" alt="RuggedYouth" className="w-16 h-16 rounded-2xl mx-auto mb-4 ring-2 ring-[#C9A84C]/30" />
+          <img src="https://imgur.com/bdwOYsa.png" alt="RuggedYouth" className="w-16 h-16 rounded-2xl mx-auto mb-4 ring-2 ring-[#C9A84C]/30" />
           <h1 className="font-display text-2xl font-bold text-white">Check Your Email</h1>
         </div>
         <div className="bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
@@ -121,7 +114,7 @@ const AuthScreen = ({ onAuth }: { onAuth: (user: AuthUser) => void }) => {
     <div className="min-h-screen bg-[#0F0E1A] flex items-center justify-center p-4" style={{ backgroundImage: 'radial-gradient(ellipse at 30% 40%, rgba(61,31,110,0.5) 0%, transparent 50%)' }}>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="https://imgur.com/7Rm4DNu.png" alt="RuggedYouth" className="w-16 h-16 rounded-2xl mx-auto mb-4 ring-2 ring-[#C9A84C]/30" />
+          <img src="https://imgur.com/bdwOYsa.png" alt="RuggedYouth" className="w-16 h-16 rounded-2xl mx-auto mb-4 ring-2 ring-[#C9A84C]/30" />
           <h1 className="font-display text-2xl font-bold text-white">Rugged<span className="text-[#C9A84C]">Youth</span> Admin</h1>
           <p className="text-white/40 text-sm mt-1">{mode === 'login' ? 'Sign in to your account' : mode === 'register' ? 'Create admin account' : 'Reset your password'}</p>
         </div>
@@ -194,7 +187,7 @@ const Sidebar = ({ user, tab, setTab, setSidebarOpen, onLogout }: SidebarProps) 
     <div className="flex flex-col h-full bg-[#111120] border-r border-[#C9A84C]/12">
       <div className="p-5 border-b border-white/6">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg overflow-hidden ring-1 ring-[#C9A84C]/30"><img src="https://imgur.com/7Rm4DNu.png" alt="RuggedYouth" className="w-full h-full object-cover" /></div>
+          <div className="w-9 h-9 rounded-lg overflow-hidden ring-1 ring-[#C9A84C]/30"><img src="https://imgur.com/bdwOYsa.png" alt="RuggedYouth" className="w-full h-full object-cover" /></div>
           <div><p className="font-display text-sm font-semibold text-white">Rugged<span className="text-[#C9A84C]">Youth</span></p><p className="text-xs text-white/30">Admin Panel</p></div>
         </div>
       </div>
