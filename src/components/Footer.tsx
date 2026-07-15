@@ -135,7 +135,7 @@ const Footer = () => {
       <div className="border-t border-white/6">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/30 flex items-center gap-1">
-            © {currentYear} RuggedYouth 4Christ. Made with 
+            © {currentYear} RuggedYouth 4Christ.
           </p>
           <div className="flex gap-5 text-xs text-white/30">
             <a href="#" className="hover:text-white/60 transition-colors">Privacy Policy</a>
