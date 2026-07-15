@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Phone, Mail } from 'lucide-react';
+import { Phone, Mail } from 'lucide-react';
 import { FacebookIcon, InstagramIcon, TikTokIcon, YouTubeIcon, WhatsAppIcon } from './BrandIcons';
 import { SOCIALS, WHATSAPP_URL } from '../lib/socials';
 
@@ -135,7 +135,7 @@ const Footer = () => {
       <div className="border-t border-white/6">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/30 flex items-center gap-1">
-            © {currentYear} RuggedYouth 4Christ. Made with <Heart className="w-3 h-3 text-red-400" /> for the next generation.
+            © {currentYear} RuggedYouth 4Christ. Made with 
           </p>
           <div className="flex gap-5 text-xs text-white/30">
             <a href="#" className="hover:text-white/60 transition-colors">Privacy Policy</a>
